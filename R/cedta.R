@@ -61,7 +61,12 @@ cedta = function(n=2L) {
     (nsname %chin% cedta.pkgEvalsUserCode && .any_eval_calls_in_stack()) ||
     nsname %chin% cedta.override ||
     isTRUE(ns$.datatable.aware) ||  # As of Sep 2018: RCAS, caretEnsemble, dtplyr, rstanarm, rbokeh, CEMiTool, rqdatatable, RImmPort, BPRMeth, rlist
-    tryCatch("data.table" %chin% get(".Depends",paste("package",nsname,sep=":"),inherits=FALSE),error=function(e)FALSE)  # both ns$.Depends and get(.Depends,ns) are not sufficient
+    tryCatch({
+      deps <- tryCatch(get(".Depends", paste("package", nsname, sep=":"), inherits = FALSE), error = function(e) character(0))
+      imports <- tryCatch(get(".Imports", paste("package", nsname, sep=":"), inherits = FALSE), error = function(e) character(0))
+      "data.table" %chin% c(deps, imports)
+    }, error = function(e) FALSE)
+
   if (!ans && getOption("datatable.verbose")) {
     # nocov start
     catf("cedta decided '%s' wasn't data.table aware. Here is call stack with [[1L]] applied:\n", nsname)
