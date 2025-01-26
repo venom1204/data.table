@@ -1731,7 +1731,7 @@ int freadMain(freadMainArgs _args) {
             firstJumpEnd = ch;  // to know how many bytes jump 0 is, for nrow estimate later (a less-good estimate when fill=true since line lengths vary more)
             if (verbose) {
               DTPRINT((unsigned)sep<32 ? "  sep=%#02x" : "  sep='%c'", sep);
-              DTPRINT(_("  with %d fields using quote rule %d\n"), topNumFields, quoteRule);
+              DTPRINT(_("Detected %d fields per line in the file, using quote rule %d (defines how quotes are handled).\n"), topNumFields, quoteRule);
             }
           }
         } else {
@@ -1781,7 +1781,7 @@ int freadMain(freadMainArgs _args) {
             if (topSkip<0) topSkip=0;       // inelegant but will do for now to pass single row input such as test 890
             if (verbose) {
               DTPRINT((unsigned)sep<32 ? "  sep=%#02x" : "  sep='%c'", sep);
-              DTPRINT(_("  with %d lines of %d fields using quote rule %d\n"), topNumLines, topNumFields, topQuoteRule);
+              DTPRINT(_("Processed %d lines with %d fields per line, using quote rule %d (controls the handling of quoted text).\n"), topNumLines, topNumFields, topQuoteRule);
             }
           }
         }
