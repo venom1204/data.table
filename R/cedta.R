@@ -52,16 +52,23 @@ cedta = function(n=2L) {
     return(TRUE)
   }
   nsname = getNamespaceName(ns)
-  ans = nsname=="data.table" ||
+  has_data_table <- tryCatch({
+    deps <- get(".Depends", paste0("package:", nsname), inherits = FALSE)
+    deps_pkgs <- sapply(strsplit(deps, "\\s+"), `[`, 1)  # Extract package names
+    imps <- get(".Imports", paste0("package:", nsname), inherits = FALSE)
+    imps_pkgs <- sapply(strsplit(imps, "\\s+"), `[`, 1)  # Extract package names
+    "data.table" %chin% c(deps_pkgs, imps_pkgs)
+  }, error = function(e) FALSE)  # This should now be part of the `ans` expression
+  ans = nsname == "data.table" ||
+    has_data_table ||  # Use the new check here
     "data.table" %chin% names(getNamespaceImports(ns)) ||   # most common and recommended cases first for speed
-    (nsname=="utils" &&
+    (nsname == "utils" &&
       (exists("debugger.look", parent.frame(n+1L)) ||
       (length(sc<-sys.calls())>=8L && sc[[length(sc)-7L]] %iscall% 'example')) ) || # 'example' for #2972
-    (nsname=="base" && all(c("FUN", "X") %chin% ls(parent.frame(n)))) || # lapply
+    (nsname == "base" && all(c("FUN", "X") %chin% ls(parent.frame(n)))) || # lapply
     (nsname %chin% cedta.pkgEvalsUserCode && .any_eval_calls_in_stack()) ||
     nsname %chin% cedta.override ||
-    isTRUE(ns$.datatable.aware) ||  # As of Sep 2018: RCAS, caretEnsemble, dtplyr, rstanarm, rbokeh, CEMiTool, rqdatatable, RImmPort, BPRMeth, rlist
-    tryCatch("data.table" %chin% get(".Depends",paste("package",nsname,sep=":"),inherits=FALSE),error=function(e)FALSE)  # both ns$.Depends and get(.Depends,ns) are not sufficient
+    isTRUE(ns$.datatable.aware)  # As of Sep 2018: RCAS, caretEnsemble, dtplyr, rstanarm, rbokeh, CEMiTool, rqdatatable, RImmPort, BPRMeth, rlist
   if (!ans && getOption("datatable.verbose")) {
     # nocov start
     catf("cedta decided '%s' wasn't data.table aware. Here is call stack with [[1L]] applied:\n", nsname)
