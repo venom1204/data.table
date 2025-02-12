@@ -577,7 +577,7 @@ replace_dot_alias = function(e) {
             } else {
               irows = as.integer(fsort(as.numeric(irows))) ## nocov; parallelized for numeric, but overhead of type conversion
             }
-          if (verbose) {cat(timetaken(last.started.at), "\n");flush.console()}
+          if (verbose) {cat(timetaken(last.started.at), "\n");flush.console()} # notranslate
         }
         ## make sure, all columns are taken from x and not from i.
         ## This is done by simply telling data.table to continue as if there was a simple subset
@@ -634,7 +634,7 @@ replace_dot_alias = function(e) {
       irows = irows[irows!=0L]
       if (verbose) {last.started.at=proc.time();catf("Inverting irows for notjoin done in ... ");flush.console()}
       i = irows = if (length(irows)) seq_len(nrow(x))[-irows] else NULL  # NULL meaning all rows i.e. seq_len(nrow(x))
-      if (verbose) cat(timetaken(last.started.at), "\n")
+      if (verbose) cat(timetaken(last.started.at), "\n") # notranslate
       leftcols = integer()  # proceed as if row subset from now on, length(leftcols) is switched on later
       rightcols = integer()
       # Doing this once here, helps speed later when repeatedly subsetting each column. R's [irows] would do this for each
@@ -892,8 +892,10 @@ replace_dot_alias = function(e) {
         }
         tt = lengths(byval)
         if (any(tt!=xnrow)) {
-          plural_part <- sprintf(ngettext(length(tt), "The item in the 'by' or 'keyby' list is length %s.", "The items in the 'by' or 'keyby' list have lengths %s."), brackify(tt))
-          stopf("%s Each must be length %d; the same length as there are rows in x (after subsetting if i is provided).", plural_part, xnrow)
+          stopf(ngettext(length(tt),
+                         "The item in the 'by' or 'keyby' list is length %s. Each must be length %d; the same length as there are rows in x (after subsetting if i is provided).",
+                         "The items in the 'by' or 'keyby' list have lengths %s. Each must be length %d; the same length as there are rows in x (after subsetting if i is provided)."),
+                brackify(tt), xnrow, domain=NA)
         }
         if (is.null(bynames)) bynames = rep.int("",length(byval))
         if (length(idx <- which(!nzchar(bynames))) && !bynull) {
@@ -1145,8 +1147,7 @@ replace_dot_alias = function(e) {
             }
           }
           names(jsub)=""
-          # dont wrap the RHS in list if it is a singular NULL and if not creating a new column
-          if (length(jsub[-1L]) == 1L && as.character(jsub[-1L]) == 'NULL' && all(lhs %chin% names_x)) jsub[[1L]]=as.name("identity") else jsub[[1L]]=as.name("list")
+          jsub[[1L]]=as.name("list")
         }
         av = all.vars(jsub,TRUE)
         if (!is.atomic(lhs)) stopf("LHS of := must be a symbol, or an atomic vector (column names or positions).")
@@ -1188,7 +1189,7 @@ replace_dot_alias = function(e) {
           #   ok=-1 which will trigger setalloccol with verbose in the next
           #   branch, which again calls _selfrefok and returns the message then
           if ((ok<-selfrefok(x, verbose=FALSE))==0L)   # ok==0 so no warning when loaded from disk (-1) [-1 considered TRUE by R]
-            if (is.data.table(x)) warningf("Invalid .internal.selfref detected and fixed by taking a (shallow) copy of the data.table so that := can add this new column by reference. At an earlier point, this data.table has been copied by R (or was created manually using structure() or similar). Avoid names<- and attr<- which in R currently (and oddly) may copy the whole data.table. Use set* syntax instead to avoid copying: ?set, ?setnames and ?setattr. If this message doesn't help, please report your use case to the data.table issue tracker so the root cause can be fixed or this message improved.")
+            if (is.data.table(x)) warningf("A shallow copy of this data.table was taken so that := can add or remove %d columns by reference. At an earlier point, this data.table was copied by R (or was created manually using structure() or similar). Avoid names<- and attr<- which in R currently (and oddly) may copy the whole data.table. Use set* syntax instead to avoid copying: ?set, ?setnames and ?setattr. It's also not unusual for data.table-agnostic packages to produce tables affected by this issue. If this message doesn't help, please report your use case to the data.table issue tracker so the root cause can be fixed or this message improved.", length(newnames))
             # !is.data.table for DF |> DT(,:=) tests 2212.16-19 (#5113) where a shallow copy is routine for data.frame
           if ((ok<1L) || (truelength(x) < ncol(x)+length(newnames))) {
             DT = x  # in case getOption contains "ncol(DT)" as it used to.  TODO: warn and then remove
@@ -2917,9 +2918,6 @@ setDT = function(x, keep.rownames=FALSE, key=NULL, check.names=FALSE) {
         break
       }
     }
-
-    # Done to avoid affecting other copies of x when we setattr() below (#4784)
-    x = .shallow(x)
 
     rn = if (!identical(keep.rownames, FALSE)) rownames(x) else NULL
     setattr(x, "row.names", .set_row_names(nrow(x)))
