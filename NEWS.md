@@ -8,6 +8,8 @@
 
 2. `melt()` now supports using `patterns()` with `id.vars`, [#6867](https://github.com/Rdatatable/data.table/issues/6867). Thanks to Toby Dylan Hocking for the suggestion and PR.
 
+3. `print()` now correctly adjusts column widths when `col.names = "none"` is used, [#6882](https://github.com/Rdatatable/data.table/issues/6882). Previously, column widths were influenced by column names and class headers even when suppressed. Now, widths are calculated based solely on the data content. Thanks @venom1204 for the fix and @brooksambrose for reporting.
+
 ## BUG FIXES
 
 1. Custom binary operators from the `lubridate` package now work with objects of class `IDate` as with a `Date` subclass, [#6839](https://github.com/Rdatatable/data.table/issues/6839). Thanks @emallickhossain for the report and @aitap for the fix.
