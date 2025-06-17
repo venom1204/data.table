@@ -21133,3 +21133,38 @@ test(2315.1, tail(DT[order(i), i], 2L), 1:2)
 # wider range of numbers needed for further coverage
 DT[1L, i := 1000L]
 test(2315.2, tail(DT[order(i), i], 2L), c(1L, 1000L))
+
+# frank() should not strip names from named vector input
+x = c(a = "a", b = "b", c = "a")
+test(2316.01, { frank(x); names(x) }, c("a", "b", "c"))
+
+# frank() should not modify names inside a list of named vectors
+ls = list(a = c(a = 1, b = 2), b = c(a = 2, b = 3))
+frank(ls)
+test(2316.02, names(ls[[1]]), c("a", "b"))
+test(2316.03, names(ls[[2]]), c("a", "b"))
+
+# frank() should not mutate original list (deep equality)
+ls = list(a = c(a = 10, b = 20), b = c(a = 30, b = 40))
+original_ls = list(a = c(a = 10, b = 20), b = c(a = 30, b = 40))
+frank(ls)
+test(2316.04, identical(ls, original_ls), TRUE)
+
+# frank() should not mutate list of unnamed vectors (control)
+ls = list(a = c(1, 2), b = c(2, 3))
+original_ls = list(a = c(1, 2), b = c(2, 3))
+frank(ls)
+test(2316.05, identical(ls, original_ls), TRUE)
+
+# frank() should return correct ranks on data.table column without side effect
+DT = data.table(x = c(3, 2, 1, 3))
+original_x = DT$x
+ranks = frank(DT$x)
+test(2316.06, ranks, c(3.5, 2, 1, 3.5))
+test(2316.07, identical(DT$x, original_x), TRUE)
+
+# frank() should preserve names on factors
+x = factor(c("low", "medium", "high"), levels = c("low", "medium", "high"))
+names(x) = c("a", "b", "c")
+frank(x)
+test(2316.08, names(x), c("a", "b", "c"))
